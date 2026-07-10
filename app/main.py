@@ -4,6 +4,7 @@ from google.genai import Client
 from dotenv import load_dotenv
 from app.models.contracts import AgentInput, AgentOutput
 from app.services.diagnosis import DiagnosisAgent
+from app.services.socratic import SocraticAgent
 
 app = FastAPI(title="eduGuide AI System Core")
 
@@ -32,6 +33,22 @@ async def process_diagnosis(payload: AgentInput):
     """
     try:
         response = await diagnosis_agent.execute(payload)
+        return response
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Agent Execution Error: {str(e)}")
+
+
+# Instantiate our Socratic Agent
+socratic_agent = SocraticAgent(client=gemini_client)
+
+# Add this new POST endpoint at the bottom of the file
+@app.post("/api/agent/socratic", response_model=AgentOutput)
+async def process_socratic(payload: AgentInput):
+    """
+    Direct endpoint to test the Socratic Homework Assistant in isolation.
+    """
+    try:
+        response = await socratic_agent.execute(payload)
         return response
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Agent Execution Error: {str(e)}")
