@@ -5,6 +5,7 @@ from dotenv import load_dotenv
 from app.models.contracts import AgentInput, AgentOutput
 from app.services.diagnosis import DiagnosisAgent
 from app.services.socratic import SocraticAgent
+from app.services.regional import RegionalAgent
 
 app = FastAPI(title="eduGuide AI System Core")
 
@@ -18,12 +19,12 @@ if not api_key:
 
 gemini_client = Client()
 
-# Instantiate our Diagnosis Agent
-diagnosis_agent = DiagnosisAgent(client=gemini_client)
-
 @app.get("/")
 def read_root():
     return {"status": "healthy", "system": "eduGuide Core Orchestrator"}
+
+# Instantiate our Diagnosis Agent
+diagnosis_agent = DiagnosisAgent(client=gemini_client)
 
 @app.post("/api/agent/diagnosis", response_model=AgentOutput)
 async def process_diagnosis(payload: AgentInput):
@@ -41,7 +42,6 @@ async def process_diagnosis(payload: AgentInput):
 # Instantiate our Socratic Agent
 socratic_agent = SocraticAgent(client=gemini_client)
 
-# Add this new POST endpoint at the bottom of the file
 @app.post("/api/agent/socratic", response_model=AgentOutput)
 async def process_socratic(payload: AgentInput):
     """
@@ -49,6 +49,21 @@ async def process_socratic(payload: AgentInput):
     """
     try:
         response = await socratic_agent.execute(payload)
+        return response
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Agent Execution Error: {str(e)}")
+    
+
+# Instantiate our Regional Agent
+regional_agent = RegionalAgent(client=gemini_client)
+
+@app.post("/api/agent/regional", response_model=AgentOutput)
+async def process_regional(payload: AgentInput):
+    """
+    Direct endpoint to test the Regional-Language Study Companion in isolation.
+    """
+    try:
+        response = await regional_agent.execute(payload)
         return response
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Agent Execution Error: {str(e)}")
